@@ -1,68 +1,55 @@
 -- Auto Steal Nearest Expensive Brainrot with G Hotkey
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
+   local Players = game:GetService("Players")
+   local LocalPlayer = Players.LocalPlayer
+   local Workspace = game:GetService("Workspace")
+   local UserInputService = game:GetService("UserInputService")
 
--- Configuração da hotkey (tecla G)
-local HOTKEY = Enum.KeyCode.G
+   local HOTKEY = Enum.KeyCode.G
 
--- Função para encontrar o brainrot mais caro
-local function findMostExpensiveBrainrot()
-    local highestValue, targetModel = 0, nil
-    print("Procurando brainrot mais caro...")
-    
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") then
-            local valueObj = obj:FindFirstChild("Value") or obj:FindFirstChild("Price") or obj:FindFirstChildWhichIsA("NumberValue")
-            if valueObj and typeof(valueObj.Value) == "number" then
-                local value = valueObj.Value
-                if value > highestValue then
-                    highestValue = value
-                    targetModel = obj
-                    print("Novo mais caro:", obj.Name, "M/S:", value)
-                end
-            end
-        end
-    end
-    
-    if not targetModel then
-        print("Nenhum brainrot com valor encontrado!")
-        return nil
-    end
-    print("Brainrot mais caro:", targetModel.Name, "M/S:", highestValue)
-    return targetModel
-end
+   local function findMostExpensiveBrainrot()
+       local highestValue, targetModel = 0, nil
+       print("Buscando brainrot mais caro...")
+       
+       for _, obj in pairs(Workspace:GetDescendants()) do
+           if obj:IsA("Model") then
+               local value = obj:FindFirstChild("Value") and obj:FindFirstChild("Value").Value or 0
+               if typeof(value) == "number" and value > highestValue then
+                   highestValue = value
+                   targetModel = obj
+                   print("Encontrado:", obj.Name, "M/S:", value)
+               end
+           end
+       end
+       
+       if targetModel then
+           print("Brainrot mais caro:", targetModel.Name, "M/S:", highestValue)
+       else
+           print("Nenhum brainrot encontrado!")
+       end
+       return targetModel
+   end
 
--- Função para roubar o brainrot
-local function stealBrainrot(model)
-    if not model then return end
-    
-    local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
-    if prompt then
-        print("Roubo via ProximityPrompt em:", model.Name)
-        prompt:FireProximityPrompt()
-    else
-        local stealEvent = model:FindFirstChild("Steal") or model:FindFirstChild("Rob")
-        if stealEvent and stealEvent:IsA("RemoteEvent") then
-            print("Roubo via FireServer em:", stealEvent.Name)
-            stealEvent:FireServer()
-        elseif stealEvent and stealEvent:IsA("RemoteFunction") then
-            print("Roubo via InvokeServer em:", stealEvent.Name)
-            stealEvent:InvokeServer()
-        else
-            print("Nenhum método de roubo encontrado em:", model.Name)
-        end
-    end
-end
+   local function stealBrainrot(model)
+       if not model then return end
+       local prompt = model:FindFirstChildWhichIsA("ProximityPrompt")
+       if prompt then
+           print("Tentando roubo via ProximityPrompt")
+           prompt:FireProximityPrompt()
+       else
+           print("ProximityPrompt não encontrado, tentando evento...")
+           local event = model:FindFirstChild("Steal")
+           if event and event:IsA("RemoteEvent") then
+               event:FireServer()
+           end
+       end
+   end
 
--- Hotkey para ativar
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == HOTKEY then
-        print("Hotkey G pressionada!")
-        local target = findMostExpensiveBrainrot()
-        stealBrainrot(target)
-    end
-end)
+   UserInputService.InputBegan:Connect(function(input)
+       if input.KeyCode == HOTKEY then
+           print("G pressionada!")
+           local target = findMostExpensiveBrainrot()
+           stealBrainrot(target)
+       end
+   end)
 
-print("Script ativado! Pressione G para roubar o brainrot mais caro.")
+   print("Script carregado! Pressione G para roubar.")
