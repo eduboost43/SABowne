@@ -1,0 +1,100 @@
+-- Bypass Steal Brainrot Script with G Hotkey
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+-- Configuração da hotkey (tecla G)
+local HOTKEY = Enum.KeyCode.G
+
+-- Lista de brainrots a incluir com critérios específicos
+local INCLUDE = {
+    ["Los Hotspotsitos"] = { OPERATOR = ">=", VALUE = 20_000_000 },
+    ["Nuclearo Dinossauro"] = { OPERATOR = ">=", VALUE = 15_000_000 },
+    ["Chicleteira Bicicleteira"] = { OPERATOR = ">=", VALUE = 35_000_000 },
+    ["Tictac Sahur"] = { OPERATOR = ">=", VALUE = 37_500_000 },
+    ["Tralaledon"] = { OPERATOR = ">=", VALUE = 27_500_000 },
+    ["Ketupat Kepat"] = { OPERATOR = ">=", VALUE = 35_000_000 },
+    ["Los Combinasionas"] = { OPERATOR = "=", VALUE = 22_500_000 },
+    ["Tang Tang Keletang"] = { OPERATOR = "=", VALUE = 33_500_000 },
+    ["Los Primos"] = { OPERATOR = "=", VALUE = 31_000_000 },
+    ["Yess my examine"] = { OPERATOR = "=", VALUE = 10_000_000 },
+    ["Money Money Puggy"] = { OPERATOR = "=", VALUE = 21_000_000 },
+    ["Chillin Chili"] = { OPERATOR = "=", VALUE = 30_000_000 },
+}
+
+-- Função para encontrar o brainrot mais caro da lista INCLUDE
+local function findMostExpensiveBrainrot()
+    local highestValue, targetPart, targetName = 0, nil, nil
+    print("Procurando brainrots em Workspace...")
+    
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and INCLUDE[obj.Name] then
+            local valueObj = obj:FindFirstChild("Value") or obj:FindFirstChild("Price") or obj:FindFirstChildWhichIsA("NumberValue")
+            if not valueObj then
+                for _, child in pairs(obj:GetChildren()) do
+                    valueObj = child:FindFirstChild("Value") or child:FindFirstChild("Price") or child:FindFirstChildWhichIsA("NumberValue")
+                    if valueObj then break end
+                end
+            end
+            local part = obj:FindFirstChildWhichIsA("BasePart")
+            if valueObj and part then
+                local value = valueObj.Value or valueObj
+                local rule = INCLUDE[obj.Name]
+                local meetsCondition = (rule.OPERATOR == ">=" and value >= rule.VALUE) or (rule.OPERATOR == "=" and value == rule.VALUE)
+                
+                if meetsCondition and value > highestValue then
+                    highestValue = value
+                    targetPart = part
+                    targetName = obj.Name
+                    print("Brainrot encontrado:", obj.Name, "Valor:", value, "em", valueObj.Parent.Name)
+                end
+            else
+                print("Nenhum valor ou part válido encontrado em:", obj.Name)
+            end
+        end
+    end
+    
+    if not targetPart then 
+        print("Nenhum brainrot válido da lista INCLUDE encontrado!") 
+    else
+        print("Brainrot mais caro selecionado:", targetName, "Valor:", highestValue)
+    end
+    return targetPart
+end
+
+-- Função para bypassar e roubar o brainrot usando ProximityPrompt
+local function stealBrainrot(part)
+    if not part then
+        print("Nenhum brainrot para roubar!")
+        return
+    end
+    
+    local model = part.Parent
+    local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt then
+        print("ProximityPrompt encontrado em:", model.Name)
+        prompt:FireProximityPrompt()
+    else
+        print("ProximityPrompt não encontrado em:", model.Name)
+        local stealEvent = model:FindFirstChild("Steal") or model:FindFirstChild("Rob")
+        if stealEvent and stealEvent:IsA("RemoteEvent") then
+            print("Tentando FireServer em:", stealEvent.Name)
+            stealEvent:FireServer()
+        elseif stealEvent and stealEvent:IsA("RemoteFunction") then
+            print("Tentando InvokeServer em:", stealEvent.Name)
+            stealEvent:InvokeServer()
+        else
+            print("Nenhum método de roubo encontrado em:", model.Name)
+        end
+    end
+end
+
+-- Hotkey para roubo instantâneo
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == HOTKEY then
+        print("Hotkey G pressionada!")
+        local target = findMostExpensiveBrainrot()
+        stealBrainrot(target)
+    end
+end)
