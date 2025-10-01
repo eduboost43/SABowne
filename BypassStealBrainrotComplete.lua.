@@ -11,38 +11,34 @@ local HOTKEY = Enum.KeyCode.G
 local function findHighestMSBrainrot()
     local highestValue, targetModel = 0, nil
     local targetName = nil
-    print("Procurando brainrots com maior M/S em Workspace.Plots...")
+    print("Procurando brainrots com maior M/S em Workspace...")
     
-    local plots = Workspace:FindFirstChild("Plots")
-    if not plots then
-        print("Pasta Plots não encontrada! Verificando Workspace diretamente...")
-        plots = Workspace
-    end
-    
-    for _, plot in pairs(plots:GetChildren()) do
-        if plot:IsA("Folder") or plot:IsA("Model") then
-            for _, obj in pairs(plot:GetDescendants()) do
-                if obj:IsA("Model") and obj.Name ~= "Plots" then
-                    local valueObj = obj:FindFirstChild("Value") or obj:FindFirstChild("Price") or obj:FindFirstChildWhichIsA("NumberValue")
-                    if valueObj then
-                        local value = valueObj.Value or valueObj
-                        print("Verificando:", obj.Name, "Valor:", value)
-                        if value > highestValue then
-                            highestValue = value
-                            targetModel = obj
-                            targetName = obj.Name
-                            print("Novo brainrot mais caro:", obj.Name, "M/S:", value)
-                        end
-                    else
-                        print("Nenhum valor encontrado em:", obj.Name)
-                    end
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            local valueObj = obj:FindFirstChild("Value") or obj:FindFirstChild("Price") or obj:FindFirstChildWhichIsA("NumberValue")
+            if not valueObj then
+                for _, child in pairs(obj:GetDescendants()) do
+                    valueObj = child:FindFirstChild("Value") or child:FindFirstChild("Price") or child:FindFirstChildWhichIsA("NumberValue")
+                    if valueObj then break end
                 end
+            end
+            if valueObj and typeof(valueObj.Value) == "number" then
+                local value = valueObj.Value
+                print("Verificando:", obj:GetFullName(), "Valor:", value)
+                if value > highestValue then
+                    highestValue = value
+                    targetModel = obj
+                    targetName = obj.Name
+                    print("Novo brainrot mais caro:", obj:GetFullName(), "M/S:", value)
+                end
+            else
+                print("Valor inválido ou não encontrado em:", obj:GetFullName())
             end
         end
     end
     
     if not targetModel then 
-        print("Nenhum brainrot com valor encontrado!")
+        print("Nenhum brainrot com valor válido encontrado!")
     else
         print("Brainrot selecionado:", targetName, "M/S:", highestValue)
     end
@@ -58,21 +54,30 @@ local function stealBrainrot(model)
     
     local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
     if prompt then
-        print("ProximityPrompt encontrado em:", model.Name, "at position:", model:GetPivot().Position)
+        print("ProximityPrompt encontrado em:", model:GetFullName())
         prompt:FireProximityPrompt()  -- Bypass do segurar E
         print("Roubo ativado!")
     else
-        print("ProximityPrompt não encontrado em:", model.Name)
-        -- Fallback para eventos remotos
-        local stealEvent = model:FindFirstChild("Steal") or model:FindFirstChild("Rob")
-        if stealEvent and stealEvent:IsA("RemoteEvent") then
-            print("Tentando FireServer em:", stealEvent.Name)
-            stealEvent:FireServer()
-        elseif stealEvent and stealEvent:IsA("RemoteFunction") then
-            print("Tentando InvokeServer em:", stealEvent.Name)
-            stealEvent:InvokeServer()
-        else
-            print("Nenhum método de roubo (ProximityPrompt ou evento) encontrado em:", model.Name)
+        print("ProximityPrompt não encontrado em:", model:GetFullName())
+        -- Tenta vários eventos remotos como fallback
+        local stealEvents = {"Steal", "Rob", "Take", "Grab"}
+        local foundEvent = false
+        for _, eventName in pairs(stealEvents) do
+            local stealEvent = model:FindFirstChild(eventName)
+            if stealEvent and stealEvent:IsA("RemoteEvent") then
+                print("Tentando FireServer em:", eventName)
+                stealEvent:FireServer()
+                foundEvent = true
+                break
+            elseif stealEvent and stealEvent:IsA("RemoteFunction") then
+                print("Tentando InvokeServer em:", eventName)
+                stealEvent:InvokeServer()
+                foundEvent = true
+                break
+            end
+        end
+        if not foundEvent then
+            print("Nenhum método de roubo (ProximityPrompt ou evento) encontrado em:", model:GetFullName())
         end
     end
 end
